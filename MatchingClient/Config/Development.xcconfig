@@ -1,0 +1,12 @@
+// Development環境用の設定
+//
+// このファイルはXcodeプロジェクトのConfiguration設定で使用されます
+
+// API設定
+API_BASE_URL = http:/$()/localhost/api
+PUSHER_APP_KEY = development_pusher_key
+SKYWAY_APP_ID = development_skyway_app_id
+
+// ビルド設定
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG
+OTHER_SWIFT_FLAGS = $(inherited) -D DEBUG

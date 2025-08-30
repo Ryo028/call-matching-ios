@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		542DE4892E5AE30400DB166B /* SkyWayRoom in Frameworks */ = {isa = PBXBuildFile; productRef = 542DE4882E5AE30400DB166B /* SkyWayRoom */; };
+		542DE48C2E5AE31D00DB166B /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 542DE48B2E5AE31D00DB166B /* Alamofire */; };
+		542DE4912E5AE33200DB166B /* PusherSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 542DE4902E5AE33200DB166B /* PusherSwift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		542DE4572E5AA25C00DB166B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -29,9 +35,22 @@
 		542DE4602E5AA25C00DB166B /* MatchingClientUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MatchingClientUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		54E7EA362E62F5CD004D0A19 /* Exceptions for "MatchingClient" folder in "MatchingClient" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 542DE4482E5AA25900DB166B /* MatchingClient */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		542DE44B2E5AA25900DB166B /* MatchingClient */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				54E7EA362E62F5CD004D0A19 /* Exceptions for "MatchingClient" folder in "MatchingClient" target */,
+			);
 			path = MatchingClient;
 			sourceTree = "<group>";
 		};
@@ -52,6 +71,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				542DE4892E5AE30400DB166B /* SkyWayRoom in Frameworks */,
+				542DE48C2E5AE31D00DB166B /* Alamofire in Frameworks */,
+				542DE4912E5AE33200DB166B /* PusherSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +134,9 @@
 			);
 			name = MatchingClient;
 			packageProductDependencies = (
+				542DE4882E5AE30400DB166B /* SkyWayRoom */,
+				542DE48B2E5AE31D00DB166B /* Alamofire */,
+				542DE4902E5AE33200DB166B /* PusherSwift */,
 			);
 			productName = MatchingClient;
 			productReference = 542DE4492E5AA25900DB166B /* MatchingClient.app */;
@@ -195,6 +220,11 @@
 			);
 			mainGroup = 542DE4402E5AA25900DB166B;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				542DE4872E5AE30400DB166B /* XCRemoteSwiftPackageReference "ios-sdk" */,
+				542DE48A2E5AE31C00DB166B /* XCRemoteSwiftPackageReference "Alamofire" */,
+				542DE48F2E5AE33200DB166B /* XCRemoteSwiftPackageReference "pusher-websocket-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 542DE44A2E5AA25900DB166B /* Products */;
 			projectDirPath = "";
@@ -400,11 +430,15 @@
 				DEVELOPMENT_TEAM = 8B5KCSR6W7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MatchingClient/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "ビデオ通話でカメラを使用します";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "音声通話でマイクを使用します";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "プロフィール画像を選択するために写真ライブラリにアクセスします";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -428,11 +462,15 @@
 				DEVELOPMENT_TEAM = 8B5KCSR6W7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MatchingClient/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "ビデオ通話でカメラを使用します";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "音声通話でマイクを使用します";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "プロフィール画像を選択するために写真ライブラリにアクセスします";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -558,6 +596,51 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		542DE4872E5AE30400DB166B /* XCRemoteSwiftPackageReference "ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/skyway/ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.3.2;
+			};
+		};
+		542DE48A2E5AE31C00DB166B /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.10.2;
+			};
+		};
+		542DE48F2E5AE33200DB166B /* XCRemoteSwiftPackageReference "pusher-websocket-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pusher/pusher-websocket-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 10.1.6;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		542DE4882E5AE30400DB166B /* SkyWayRoom */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 542DE4872E5AE30400DB166B /* XCRemoteSwiftPackageReference "ios-sdk" */;
+			productName = SkyWayRoom;
+		};
+		542DE48B2E5AE31D00DB166B /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 542DE48A2E5AE31C00DB166B /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
+		542DE4902E5AE33200DB166B /* PusherSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 542DE48F2E5AE33200DB166B /* XCRemoteSwiftPackageReference "pusher-websocket-swift" */;
+			productName = PusherSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 542DE4412E5AA25900DB166B /* Project object */;
 }
