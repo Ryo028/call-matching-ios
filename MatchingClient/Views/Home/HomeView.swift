@@ -32,47 +32,10 @@ struct HomeView: View {
                                 .bold()
                                 .padding(.top, 80)
                             
-                            // 性別選択ボタン
-                            HStack {
-                                Spacer()
-                                ForEach(GenderType.allCases, id: \.label) { gender in
-                                    VStack {
-                                        // 性別選択ボタン
-                                        Button(action: {
-                                            withAnimation(.spring()) {
-                                                genderType = gender
-                                            }
-                                        }) {
-                                            Image(systemName: gender.systemIcon)
-                                                .font(.system(size: 40))
-                                                .foregroundColor(genderType == gender ? Theme.primaryColor : Color.gray)
-                                                .rotationEffect(genderType == gender ? .degrees(-10) : .degrees(0))
-                                        }
-                                        .frame(width: 100, height: 100)
-                                        .frame(width: genderType == gender ? 120 : 100, 
-                                               height: genderType == gender ? 120 : 100)
-                                        .background(
-                                            Circle()
-                                                .fill(Color.white)
-                                                .shadow(color: Theme.cardShadow, radius: 8, x: 0, y: 4)
-                                        )
-                                        .overlay(
-                                            genderType == gender ?
-                                            Circle()
-                                                .stroke(Theme.buttonGradient, lineWidth: 5)
-                                            : nil
-                                        )
-                                        
-                                        Text(gender.label)
-                                            .foregroundColor(Theme.Text.secondary)
-                                            .bold()
-                                            .padding(10)
-                                    }
-                                    Spacer()
-                                }
-                            }
-                            .padding(.top, 20)
-                            .padding(.bottom)
+                            // 3D性別選択カード
+                            Gender3DCardSelectionView(selectedGender: $genderType)
+                                .padding(.top, 30)
+                                .padding(.bottom, 20)
                             
                             Spacer()
                             
