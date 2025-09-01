@@ -3,7 +3,7 @@ import SwiftUI
 /// プロフィール画面
 struct ProfileView: View {
     @EnvironmentObject private var authViewModel: AuthViewModel
-    @StateObject private var viewModel = ProfileViewModel()
+    @EnvironmentObject private var viewModel: ProfileViewModel
     
     @State private var isEditing = false
     @State private var showingImagePicker = false
@@ -18,20 +18,18 @@ struct ProfileView: View {
     @State private var hasSelectedNewImage = false
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                // 背景グラデーション
-                Theme.backgroundGradient
-                    .ignoresSafeArea()
-                
-                if viewModel.isLoading && viewModel.user == nil {
-                    // 初回ローディング
-                    ProgressView("プロフィールを読み込んでいます...")
-                        .progressViewStyle(CircularProgressViewStyle(tint: Theme.primaryColor))
-                        .foregroundColor(Theme.Text.primary)
-                } else {
-                    ScrollView {
-                        VStack(spacing: 24) {
+        ZStack {
+            // 背景グラデーション（親ViewのNavigationViewから提供される背景と合わせる）
+            Color.clear
+            
+            if viewModel.isLoading && viewModel.user == nil {
+                // 初回ローディング
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: Theme.primaryColor))
+                    .scaleEffect(1.5)
+            } else {
+                ScrollView {
+                    VStack(spacing: 24) {
                             // プロフィール画像セクション
                             ProfileImageSection(
                                 profileImage: isEditing ? $tempProfileImage : .constant(viewModel.profileImage),
@@ -83,12 +81,11 @@ struct ProfileView: View {
                                 }
                             }
                             .padding(.horizontal, 20)
-                            .padding(.bottom, 30)
+                            .padding(.bottom, 100) // タブバーの高さ分余白を追加
                         }
                     }
                 }
             }
-            .navigationBarHidden(true)
             .alert("ログアウト", isPresented: $showingLogoutAlert) {
                 Button("キャンセル", role: .cancel) {}
                 Button("ログアウト", role: .destructive) {
@@ -135,7 +132,6 @@ struct ProfileView: View {
             } message: {
                 Text(viewModel.successMessage ?? "")
             }
-        }
         .task {
             // 初回読み込み
             if viewModel.user == nil {
@@ -372,9 +368,11 @@ struct ProfileInfoRow: View {
 #Preview("プロフィール画面") {
     ProfileView()
         .environmentObject(AuthViewModel())
+        .environmentObject(ProfileViewModel())
 }
 
 #Preview("編集モード") {
     ProfileView()
         .environmentObject(AuthViewModel())
+        .environmentObject(ProfileViewModel())
 }

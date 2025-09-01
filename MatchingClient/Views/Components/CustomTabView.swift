@@ -75,28 +75,21 @@ struct TabItemView: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 6) {
-                // アイコン（絵文字）
-                Text(tab.emoji)
-                    .font(.system(size: 24))
-                    .scaleEffect(isSelected ? 1.2 : 1.0)
-                
-                // タイトル
-                Text(tab.title)
-                    .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
-                    .foregroundColor(isSelected ? Theme.primaryColor : Color.gray)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 70)
-            .background(
-                ZStack {
-                    if isSelected {
-                        Circle()
-                            .fill(Theme.primaryColor.opacity(0.1))
-                            .frame(width: 60, height: 60)
+            // アイコン（絵文字）のみ表示
+            Text(tab.emoji)
+                .font(.system(size: isSelected ? 28 : 24))
+                .scaleEffect(isSelected ? 1.1 : 1.0)
+                .frame(maxWidth: .infinity)
+                .frame(height: 70)
+                .background(
+                    ZStack {
+                        if isSelected {
+                            Circle()
+                                .fill(Theme.primaryColor.opacity(0.1))
+                                .frame(width: 60, height: 60)
+                        }
                     }
-                }
-            )
+                )
         }
     }
 }

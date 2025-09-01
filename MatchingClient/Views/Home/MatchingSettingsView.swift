@@ -4,159 +4,173 @@ import SwiftUI
 struct MatchingSettingsView: View {
     @Binding var ageRange: ClosedRange<Double>
     @Binding var distanceRange: Double
-    @Binding var callType: MatchingView.CallType
     @Binding var isPresented: Bool
+    
+    // MultipleSliderView用の変数
+    @State private var lowerAge: Int = 18
+    @State private var upperAge: Int = 61  // 61は制限なしを意味する
+    // CustomSliderView用の変数
+    @State private var distanceValue: Int = 301  // 301は制限なしを意味する
     
     var body: some View {
         NavigationView {
             ZStack {
-                // 背景色
-                Color(UIColor.systemGroupedBackground)
-                    .ignoresSafeArea()
+                backgroundView
                 
                 ScrollView {
-                    VStack(spacing: 20) {
-                        // 年齢範囲設定
-                        SettingSectionView(title: "年齢範囲") {
-                            VStack(spacing: 16) {
-                                HStack {
-                                    Text("相手の年齢")
-                                        .font(.system(size: 15))
-                                        .foregroundColor(Theme.Text.primary)
-                                    
-                                    Spacer()
-                                    
-                                    Text("\(Int(ageRange.lowerBound))歳 〜 \(Int(ageRange.upperBound))歳")
-                                        .font(.system(size: 15, weight: .semibold))
-                                        .foregroundColor(Theme.primaryColor)
-                                }
-                                
-                                // 年齢範囲スライダー
-                                VStack(spacing: 8) {
-                                    // カスタム範囲スライダー
-                                    GeometryReader { geometry in
-                                        ZStack(alignment: .leading) {
-                                            // 背景トラック
-                                            RoundedRectangle(cornerRadius: 4)
-                                                .fill(Color.gray.opacity(0.2))
-                                                .frame(height: 6)
-                                            
-                                            // 選択範囲
-                                            RoundedRectangle(cornerRadius: 4)
-                                                .fill(Theme.buttonGradient)
-                                                .frame(
-                                                    width: CGFloat((ageRange.upperBound - ageRange.lowerBound) / 50.0) * geometry.size.width,
-                                                    height: 6
-                                                )
-                                                .offset(x: CGFloat((ageRange.lowerBound - 18.0) / 50.0) * geometry.size.width)
-                                        }
-                                    }
-                                    .frame(height: 6)
-                                    
-                                    HStack {
-                                        Text("18歳")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(Theme.Text.secondary)
-                                        
-                                        Spacer()
-                                        
-                                        Text("68歳")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(Theme.Text.secondary)
-                                    }
-                                }
-                                .padding(.top, 8)
-                            }
-                        }
+                    VStack(spacing: 25) {
+                        headerView
+                        ageRangeView
+                        distanceSettingView
                         
-                        // 距離設定
-                        SettingSectionView(title: "距離") {
-                            VStack(spacing: 16) {
-                                HStack {
-                                    Text("相手との距離")
-                                        .font(.system(size: 15))
-                                        .foregroundColor(Theme.Text.primary)
-                                    
-                                    Spacer()
-                                    
-                                    Text("\(Int(distanceRange))km以内")
-                                        .font(.system(size: 15, weight: .semibold))
-                                        .foregroundColor(Theme.primaryColor)
-                                }
-                                
-                                Slider(value: $distanceRange, in: 1...50, step: 1)
-                                    .accentColor(Theme.primaryColor)
-                                
-                                HStack {
-                                    Text("1km")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(Theme.Text.secondary)
-                                    
-                                    Spacer()
-                                    
-                                    Text("50km")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(Theme.Text.secondary)
-                                }
+                        // 完了ボタンをコンテンツの最後に配置
+                        Button(action: {
+                            withAnimation(.spring()) {
+                                isPresented = false
                             }
-                        }
-                        
-                        // 通話タイプ設定
-                        SettingSectionView(title: "通話タイプ") {
-                            VStack(spacing: 12) {
-                                ForEach(MatchingView.CallType.allCases, id: \.self) { type in
-                                    CallTypeSelectionRow(
-                                        type: type,
-                                        isSelected: callType == type,
-                                        action: { callType = type }
-                                    )
-                                }
-                            }
-                        }
-                        
-                        // その他の設定（将来的に追加）
-                        SettingSectionView(title: "その他") {
-                            VStack(spacing: 12) {
-                                SettingRowView(
-                                    icon: "bell.fill",
-                                    title: "通知設定",
-                                    value: "オン",
-                                    action: {
-                                        // TODO: 通知設定画面を開く
-                                    }
+                        }) {
+                            Text("完了")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 28)
+                                        .fill(Theme.buttonGradient)
                                 )
-                                
-                                Divider()
-                                
-                                SettingRowView(
-                                    icon: "shield.fill",
-                                    title: "プライバシー設定",
-                                    value: "",
-                                    action: {
-                                        // TODO: プライバシー設定画面を開く
-                                    }
-                                )
-                            }
+                                .shadow(color: Theme.buttonShadow, radius: 12, x: 0, y: 6)
                         }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                        .padding(.bottom, 40)
                     }
                     .padding(.vertical, 20)
                 }
             }
-            .navigationTitle("通話設定")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完了") {
-                        withAnimation(.spring()) {
-                            isPresented = false
-                        }
-                    }
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Theme.primaryColor)
-                }
+            .navigationBarHidden(true)
+            .onAppear {
+                // 初期値を同期
+                lowerAge = Int(ageRange.lowerBound)
+                upperAge = Int(ageRange.upperBound)
+                distanceValue = Int(distanceRange)
             }
+            .overlay(
+                // 左上の閉じるボタンのみ
+                VStack {
+                    HStack {
+                        Button(action: {
+                            withAnimation(.spring()) {
+                                isPresented = false
+                            }
+                        }) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(Theme.Text.primary)
+                                .frame(width: 36, height: 36)
+                                .background(
+                                    Circle()
+                                        .fill(Color.white.opacity(0.9))
+                                        .shadow(color: Theme.cardShadow, radius: 8, x: 0, y: 2)
+                                )
+                        }
+                        .padding(.leading, 20)
+                        .padding(.top, 50)
+                        
+                        Spacer()
+                    }
+                    
+                    Spacer()
+                }
+            )
         }
     }
+    
+    // 背景ビュー
+    private var backgroundView: some View {
+        Theme.backgroundGradient
+            .ignoresSafeArea()
+    }
+    
+    // ヘッダービュー
+    private var headerView: some View {
+        Text("マッチング設定")
+            .font(.system(size: 18, weight: .semibold))
+            .foregroundColor(Theme.Text.primary)
+            .padding(.top, 20)
+            .padding(.bottom, 10)
+    }
+    
+    // 年齢範囲ビュー
+    private var ageRangeView: some View {
+        VStack(spacing: 20) {
+            HStack {
+                Image(systemName: "person.2.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(Theme.secondaryColor)
+                
+                Text("年齢")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(Theme.Text.primary)
+                
+                Spacer()
+            }
+            
+            // MultipleSliderViewを使用
+            MultipleSliderView(
+                initLowerValue: Int(ageRange.lowerBound),
+                initUpperValue: Int(ageRange.upperBound),
+                lowerValue: $lowerAge,
+                upperValue: $upperAge
+            )
+            .onChange(of: lowerAge) { newValue in
+                ageRange = Double(newValue)...ageRange.upperBound
+            }
+            .onChange(of: upperAge) { newValue in
+                ageRange = ageRange.lowerBound...Double(newValue)
+            }
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.95))
+                .shadow(color: Theme.cardShadow, radius: 12, x: 0, y: 6)
+        )
+        .padding(.horizontal, 20)
+    }
+    
+    // 距離設定ビュー
+    private var distanceSettingView: some View {
+        VStack(spacing: 20) {
+            HStack {
+                Image(systemName: "location.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(Theme.secondaryColor)
+                
+                Text("距離")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(Theme.Text.primary)
+                
+                Spacer()
+            }
+            
+            // CustomSliderViewを使用
+            CustomSliderView(
+                initValue: Int(distanceRange),
+                value: $distanceValue
+            )
+            .onChange(of: distanceValue) { newValue in
+                distanceRange = Double(newValue)
+            }
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.95))
+                .shadow(color: Theme.cardShadow, radius: 12, x: 0, y: 6)
+        )
+        .padding(.horizontal, 20)
+    }
+    
 }
 
 /// 設定セクションビュー
@@ -186,37 +200,6 @@ struct SettingSectionView<Content: View>: View {
                     .fill(Color.white)
             )
             .padding(.horizontal, 20)
-        }
-    }
-}
-
-/// 通話タイプ選択行
-struct CallTypeSelectionRow: View {
-    let type: MatchingView.CallType
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: type.icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(isSelected ? Theme.primaryColor : Theme.Text.secondary)
-                    .frame(width: 28)
-                
-                Text(type.rawValue)
-                    .font(.system(size: 15))
-                    .foregroundColor(Theme.Text.primary)
-                
-                Spacer()
-                
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(Theme.primaryColor)
-                }
-            }
-            .padding(.vertical, 4)
         }
     }
 }
@@ -261,7 +244,6 @@ struct SettingRowView: View {
     MatchingSettingsView(
         ageRange: .constant(18.0...35.0),
         distanceRange: .constant(10.0),
-        callType: .constant(.both),
         isPresented: .constant(true)
     )
 }

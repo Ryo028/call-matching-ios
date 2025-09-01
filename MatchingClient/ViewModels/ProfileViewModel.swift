@@ -33,15 +33,19 @@ final class ProfileViewModel: ObservableObject {
     // MARK: - Initialization
     
     init() {
-        Task {
-            await loadUserProfile()
-        }
+        // 初期化時にAPIコールを行わない
+        // ProfileViewのtaskモディファイアから呼び出す
     }
     
     // MARK: - Public Methods
     
     /// ユーザープロフィールを読み込む
     func loadUserProfile() async {
+        // 既にロード済みの場合はスキップ
+        if user != nil {
+            return
+        }
+        
         isLoading = true
         errorMessage = nil
         

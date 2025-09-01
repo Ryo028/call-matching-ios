@@ -2,34 +2,159 @@ import SwiftUI
 
 /// ホーム画面（カスタムタブ付き）
 struct HomeView: View {
+    
     @State private var selectedTab: TabType = .call
-    @EnvironmentObject var authViewModel: AuthViewModel  // ContentViewから渡されるAuthViewModelを使用
+    @State private var isShowMatchingView = false
+    @State private var isShowSetting = false
+    @State private var genderType: GenderType = .all
+    
+    /// ContentViewから渡されるAuthViewModelを使用
+    @EnvironmentObject var authViewModel: AuthViewModel
+    
     @StateObject private var matchingViewModel = MatchingViewModel()
+    @StateObject private var profileViewModel = ProfileViewModel()
     
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // 背景
-            Theme.backgroundGradient
-                .ignoresSafeArea()
-            
-            // コンテンツ
-            Group {
-                switch selectedTab {
-                case .call:
-                    MatchingView()
-                        .environmentObject(matchingViewModel)
-                case .profile:
-                    ProfileView()
+        NavigationView {
+            ZStack {
+                // 背景グラデーション
+                Theme.backgroundGradient
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    // メインコンテンツ
+                    if selectedTab == .call {
+                        // 通話タブの内容
+                        VStack {
+                            Text("どんな人とトークする？？")
+                                .foregroundColor(Theme.Text.primary)
+                                .font(.system(.title, design: .rounded))
+                                .bold()
+                                .padding(.top, 80)
+                            
+                            // 性別選択ボタン
+                            HStack {
+                                Spacer()
+                                ForEach(GenderType.allCases, id: \.label) { gender in
+                                    VStack {
+                                        // 性別選択ボタン
+                                        Button(action: {
+                                            withAnimation(.spring()) {
+                                                genderType = gender
+                                            }
+                                        }) {
+                                            Image(systemName: gender.systemIcon)
+                                                .font(.system(size: 40))
+                                                .foregroundColor(genderType == gender ? Theme.primaryColor : Color.gray)
+                                                .rotationEffect(genderType == gender ? .degrees(-10) : .degrees(0))
+                                        }
+                                        .frame(width: 100, height: 100)
+                                        .frame(width: genderType == gender ? 120 : 100, 
+                                               height: genderType == gender ? 120 : 100)
+                                        .background(
+                                            Circle()
+                                                .fill(Color.white)
+                                                .shadow(color: Theme.cardShadow, radius: 8, x: 0, y: 4)
+                                        )
+                                        .overlay(
+                                            genderType == gender ?
+                                            Circle()
+                                                .stroke(Theme.buttonGradient, lineWidth: 5)
+                                            : nil
+                                        )
+                                        
+                                        Text(gender.label)
+                                            .foregroundColor(Theme.Text.secondary)
+                                            .bold()
+                                            .padding(10)
+                                    }
+                                    Spacer()
+                                }
+                            }
+                            .padding(.top, 20)
+                            .padding(.bottom)
+                            
+                            Spacer()
+                            
+                            // 通話開始ボタン
+                            Button(action: {
+                                isShowMatchingView = true
+                            }) {
+                                Text("Goooo")
+                                    .foregroundStyle(Theme.Text.primary)
+                                    .font(.title)
+                                    .bold()
+                                    .italic()
+                            }
+                            .overlay {
+                                RoundedRectangle(cornerRadius: .infinity)
+                                    .stroke(Theme.buttonGradient, lineWidth: 5)
+                                    .frame(width: 200, height: 60)
+                                HStack {
+                                    Image(systemName: "phone.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(Theme.primaryColor)
+                                    Spacer(minLength: 150)
+                                }
+                            }
+                            .padding(.bottom, 120) // タブバーの高さ分余白を増やす
+                            .fullScreenCover(isPresented: $isShowMatchingView) {
+                                MatchingSearchView(
+                                    isPresented: $isShowMatchingView,
+                                    matchingViewModel: matchingViewModel,
+                                    selectedGender: genderType == .male ? .male : 
+                                                   genderType == .female ? .female : nil,
+                                    ageRange: 18.0...61.0,  // 61は制限なし
+                                    distance: 301.0         // 301は制限なし
+                                )
+                                .onAppear {
+                                    Task { @MainActor in
+                                        await matchingViewModel.resetMatching()
+                                    }
+                                }
+                            }
+                        }
+                    } else if selectedTab == .profile {
+                        ProfileView()
+                            .environmentObject(profileViewModel)
+                            .frame(maxHeight: .infinity)
+                    }
+                }
+                
+                // カスタムタブバーを最前面に配置
+                VStack {
+                    Spacer()
+                    CustomTabView(selectedTab: $selectedTab)
+                        .padding(.bottom)
+                        .background(
+                            Color.white.opacity(0.95)
+                                .blur(radius: 10)
+                                .ignoresSafeArea()
+                        )
                 }
             }
-            
-            // カスタムタブバー
-            VStack {
-                Spacer()
-                CustomTabView(selectedTab: $selectedTab)
-                    .padding(.bottom, 20)
+            .navigationTitle("ランダムマッチ")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        isShowSetting = true
+                    }) {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(Theme.primaryColor)
+                    }
+                }
+            }
+            .sheet(isPresented: $isShowSetting) {
+                MatchingSettingsView(
+                    ageRange: .constant(18.0...61.0),  // 61は制限なし
+                    distanceRange: .constant(301.0),   // 301は制限なし
+                    isPresented: $isShowSetting
+                )
             }
         }
+        .navigationViewStyle(StackNavigationViewStyle())
         .environmentObject(authViewModel)
         .onAppear {
             // Pusher接続を開始

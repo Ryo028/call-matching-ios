@@ -7,24 +7,8 @@ struct MatchingView: View {
     @State private var selectedGender: Gender? = nil
     @State private var ageRange = 18.0...35.0
     @State private var distanceRange: Double = 10.0
-    @State private var callType: CallType = .both
     @State private var showingSettings = false
     @State private var showingSearchView = false
-    
-    /// 通話タイプ
-    enum CallType: String, CaseIterable {
-        case voice = "音声のみ"
-        case video = "ビデオ"
-        case both = "どちらでも"
-        
-        var icon: String {
-            switch self {
-            case .voice: return "mic.fill"
-            case .video: return "video.fill"
-            case .both: return "phone.fill"
-            }
-        }
-    }
     
     var body: some View {
         NavigationView {
@@ -85,7 +69,6 @@ struct MatchingView: View {
                 MatchingSettingsView(
                     ageRange: $ageRange,
                     distanceRange: $distanceRange,
-                    callType: $callType,
                     isPresented: $showingSettings
                 )
             }
@@ -253,7 +236,6 @@ struct CallSettingsCard: View {
     @Binding var selectedGender: Gender?
     @Binding var ageRange: ClosedRange<Double>
     @Binding var distanceRange: Double
-    @Binding var callType: MatchingView.CallType
     
     var body: some View {
         VStack(spacing: 24) {
@@ -339,23 +321,6 @@ struct CallSettingsCard: View {
                 Slider(value: $distanceRange, in: 1...50, step: 1)
                     .accentColor(Theme.primaryColor)
             }
-            
-            // 通話タイプ
-            VStack(alignment: .leading, spacing: 12) {
-                Text("通話タイプ")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(Theme.Text.secondary)
-                
-                HStack(spacing: 10) {
-                    ForEach(MatchingView.CallType.allCases, id: \.self) { type in
-                        CallTypeButton(
-                            type: type,
-                            isSelected: callType == type,
-                            action: { callType = type }
-                        )
-                    }
-                }
-            }
         }
         .padding(20)
         .background(
@@ -390,40 +355,6 @@ struct GenderSelectionButton: View {
                         }
                     }
                 )
-        }
-    }
-}
-
-/// 通話タイプボタン
-struct CallTypeButton: View {
-    let type: MatchingView.CallType
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 6) {
-                Image(systemName: type.icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(isSelected ? .white : Theme.Text.secondary)
-                
-                Text(type.rawValue)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(isSelected ? .white : Theme.Text.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(
-                Group {
-                    if isSelected {
-                        RoundedRectangle(cornerRadius: 15)
-                            .fill(Theme.buttonGradient)
-                    } else {
-                        RoundedRectangle(cornerRadius: 15)
-                            .fill(Color.gray.opacity(0.1))
-                    }
-                }
-            )
         }
     }
 }
