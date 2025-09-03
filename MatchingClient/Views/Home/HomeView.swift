@@ -44,19 +44,29 @@ struct HomeView: View {
                                 isShowMatchingView = true
                             }) {
                                 Text("Goooo")
-                                    .foregroundStyle(Theme.Text.primary)
+                                    .foregroundStyle(Color.black)
                                     .font(.title)
                                     .bold()
                                     .italic()
                             }
                             .overlay {
                                 RoundedRectangle(cornerRadius: .infinity)
-                                    .stroke(Theme.buttonGradient, lineWidth: 5)
+                                    .stroke(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color.black,
+                                                Color.gray
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 3
+                                    )
                                     .frame(width: 200, height: 60)
                                 HStack {
                                     Image(systemName: "phone.fill")
                                         .font(.system(size: 20))
-                                        .foregroundColor(Theme.primaryColor)
+                                        .foregroundColor(Color.black)
                                     Spacer(minLength: 150)
                                 }
                             }
@@ -88,12 +98,7 @@ struct HomeView: View {
                 VStack {
                     Spacer()
                     CustomTabView(selectedTab: $selectedTab)
-                        .padding(.bottom)
-                        .background(
-                            Color.white.opacity(0.95)
-                                .blur(radius: 10)
-                                .ignoresSafeArea()
-                        )
+                        .padding(.bottom, 20)
                 }
             }
             .navigationTitle("ランダムマッチ")

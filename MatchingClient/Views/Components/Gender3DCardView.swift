@@ -91,45 +91,45 @@ struct CardFrontView: View {
             // アイコン
             Image(systemName: gender.systemIcon)
                 .font(.system(size: 40))
-                .foregroundColor(isSelected ? Theme.primaryColor : Color.gray)
+                .foregroundColor(isSelected ? Color.white : Color.black)
                 .frame(width: 60, height: 60)
                 .background(
                     Circle()
-                        .fill(Color.white.opacity(0.9))
-                        .shadow(color: Theme.cardShadow, radius: 4)
+                        .fill(isSelected ? Color.white.opacity(0.15) : Color.gray.opacity(0.1))
                 )
             
             // ラベル
             Text(gender.label)
                 .font(.system(size: 14, weight: .bold))
-                .foregroundColor(isSelected ? Theme.Text.primary : Theme.Text.secondary)
+                .foregroundColor(isSelected ? Color.white : Color.black)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: isSelected ? 
-                            [Theme.primaryColor.opacity(0.1), Theme.secondaryColor.opacity(0.1)] : 
-                            [Color.white, Color.gray.opacity(0.05)]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+                    isSelected ? 
+                    Color.black : 
+                    Color.white
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(
-                            isSelected ? Theme.buttonGradient : 
-                            LinearGradient(colors: [Color.gray.opacity(0.2)], startPoint: .top, endPoint: .bottom),
-                            lineWidth: isSelected ? 3 : 1
+                            LinearGradient(
+                                colors: isSelected ? 
+                                [Color.white.opacity(0.8), Color.gray.opacity(0.5)] : 
+                                [Color.gray.opacity(0.2), Color.gray.opacity(0.2)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: isSelected ? 1.5 : 1
                         )
                 )
         )
         .shadow(
-            color: isSelected ? Theme.primaryColor.opacity(0.3) : Color.black.opacity(0.1),
-            radius: isSelected ? 10 : 5,
+            color: Color.black.opacity(0.3),
+            radius: isSelected ? 15 : 8,
             x: 0,
-            y: isSelected ? 5 : 2
+            y: isSelected ? 8 : 4
         )
     }
 }
@@ -170,20 +170,29 @@ struct CardBackView: View {
             // 説明テキスト
             Text(description)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundColor(Theme.Text.primary)
+                .foregroundColor(Color.white)
                 .multilineTextAlignment(.center)
                 .lineSpacing(2)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Theme.buttonGradient)
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.black,
+                            Color.black.opacity(0.85)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
                 .overlay(
                     // キラキラエフェクト
                     GeometryReader { geometry in
                         ForEach(0..<5, id: \.self) { index in
                             Circle()
-                                .fill(Color.white.opacity(0.3))
+                                .fill(Color.white.opacity(0.2))
                                 .frame(width: CGFloat.random(in: 4...8), 
                                        height: CGFloat.random(in: 4...8))
                                 .position(
@@ -196,7 +205,7 @@ struct CardBackView: View {
                 )
         )
         .shadow(
-            color: Theme.primaryColor.opacity(0.4),
+            color: Color.white.opacity(0.1),
             radius: 10,
             x: 0,
             y: 5

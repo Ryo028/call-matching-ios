@@ -41,11 +41,43 @@ struct CustomTabView: View {
     
     var body: some View {
         ZStack {
-            // 背景
+            // ブラー背景
             Capsule()
-                .fill(Color.white)
+                .fill(
+                    .ultraThinMaterial  // ガラスエフェクト
+                )
                 .frame(height: height)
-                .shadow(color: Theme.cardShadow, radius: 20, x: 0, y: 10)
+                .overlay(
+                    // グレーのオーバーレイ
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.gray.opacity(0.15),
+                                    Color.gray.opacity(0.05)
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                )
+                .overlay(
+                    // 枠線
+                    Capsule()
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.white.opacity(0.3),
+                                    Color.gray.opacity(0.2)
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 0.5
+                        )
+                )
+                .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 8)
+                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
             
             // タブアイテム
             HStack(spacing: 0) {
@@ -54,7 +86,7 @@ struct CustomTabView: View {
                         tab: tab,
                         isSelected: selectedTab == tab,
                         action: {
-                            withAnimation(.spring(response: 0.3)) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 selectedTab = tab
                             }
                         }
@@ -75,21 +107,45 @@ struct TabItemView: View {
     
     var body: some View {
         Button(action: action) {
-            // アイコン（絵文字）のみ表示
-            Text(tab.emoji)
-                .font(.system(size: isSelected ? 28 : 24))
-                .scaleEffect(isSelected ? 1.1 : 1.0)
-                .frame(maxWidth: .infinity)
-                .frame(height: 70)
-                .background(
-                    ZStack {
-                        if isSelected {
+            ZStack {
+                // 選択インジケーター
+                if isSelected {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.black.opacity(0.1),
+                                    Color.black.opacity(0.05)
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: 50, height: 50)
+                        .overlay(
                             Circle()
-                                .fill(Theme.primaryColor.opacity(0.1))
-                                .frame(width: 60, height: 60)
-                        }
-                    }
-                )
+                                .stroke(
+                                    Color.black.opacity(0.15),
+                                    lineWidth: 0.5
+                                )
+                        )
+                        .blur(radius: 0.5)
+                }
+                
+                // アイコン（絵文字）
+                Text(tab.emoji)
+                    .font(.system(size: isSelected ? 26 : 22))
+                    .scaleEffect(isSelected ? 1.05 : 1.0)
+                    .opacity(isSelected ? 1.0 : 0.6)
+                    .shadow(
+                        color: isSelected ? Color.black.opacity(0.2) : Color.clear,
+                        radius: 2,
+                        x: 0,
+                        y: 1
+                    )
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 70)
         }
     }
 }

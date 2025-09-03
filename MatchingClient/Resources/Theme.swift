@@ -15,17 +15,20 @@ enum Theme {
     static let backgroundGradient = LinearGradient(
         gradient: Gradient(colors: [
             Color("BackgroundColor"),
-            Color("BackgroundColor").opacity(0.9)
+            Color("BackgroundColor").opacity(0.98)
         ]),
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
+        startPoint: .top,
+        endPoint: .bottom
     )
     
     /// ボタングラデーション
     static let buttonGradient = LinearGradient(
-        gradient: Gradient(colors: [primaryColor, secondaryColor]),
-        startPoint: .leading,
-        endPoint: .trailing
+        gradient: Gradient(colors: [
+            primaryColor,
+            primaryColor.opacity(0.85)
+        ]),
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
     )
     
     /// テキストカラー

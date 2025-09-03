@@ -1,5 +1,15 @@
 import SwiftUI
 
+/// マッチング画面の状態
+enum MatchingScreenState {
+    case initial                    // 初期状態
+    case searching                  // マッチング検索中
+    case matchFound                 // マッチ発見（承認待ち）
+    case waitingForOtherUser       // 相手の承認待ち
+    case inCall                    // 通話中
+    case completed                 // 完了（画面を閉じる）
+}
+
 /// マッチング検索画面（フルスクリーン）
 struct MatchingSearchView: View {
     @Binding var isPresented: Bool
@@ -9,52 +19,58 @@ struct MatchingSearchView: View {
     let ageRange: ClosedRange<Double>
     let distance: Double
     
+    @State private var screenState: MatchingScreenState = .initial
     @State private var rotationAngle = 0.0
     @State private var pulseScale = 1.0
-    @State private var matchFound = false
     @State private var matchingTask: Task<Void, Never>?
-    @State private var showCallView = false
-    @State private var isInitialLoad = true  // 初回ロードフラグ
     
     var body: some View {
         ZStack {
-            // 通話画面表示時は通話画面のみを表示
-            if showCallView,
-               let roomId = matchingViewModel.roomId,
-               let user = matchingViewModel.matchedUser {
-                CallInProgressView(
-                    roomName: roomId,
-                    displayName: user.name,
-                    userId: authViewModel.currentUser?.id,  // 自分のユーザーID
-                    otherUserId: user.id,  // 相手のユーザーID
-                    otherUser: user,  // 相手のユーザー情報
-                    showCallView: $showCallView,
-                    showMatchingSearch: $isPresented
-                )
-                .onAppear {
-                    // SkyWayトークンを設定
-                    if let token = matchingViewModel.skywayToken {
-                        SkyWayManager.shared.setAuthToken(token)
-                    }
-                }
-                .onDisappear {
-                    // 通話画面から戻った時の処理
-                    // showCallViewがfalseかつisPresentedもfalseの場合のみ、通話が終了したと判断
-                    // （ユーザーが明示的に終了ボタンを押した場合）
-                    if !showCallView && !isPresented {
-                        Task {
-                            // マッチング状態をリセット
-                            await matchingViewModel.resetMatching()
+            // 状態に応じて画面を切り替え
+            switch screenState {
+            case .inCall:
+                // 通話画面
+                if let roomId = matchingViewModel.roomId,
+                   let user = matchingViewModel.matchedUser {
+                    CallInProgressView(
+                        roomName: roomId,
+                        displayName: user.name,
+                        userId: authViewModel.currentUser?.id,  // 自分のユーザーID
+                        otherUserId: user.id,  // 相手のユーザーID
+                        otherUser: user,  // 相手のユーザー情報
+                        showCallView: Binding(
+                            get: { screenState == .inCall },
+                            set: { if !$0 { screenState = .completed } }
+                        ),
+                        showMatchingSearch: $isPresented
+                    )
+                    .onAppear {
+                        // SkyWayトークンを設定
+                        if let token = matchingViewModel.skywayToken {
+                            SkyWayManager.shared.setAuthToken(token)
                         }
                     }
+                    .onDisappear {
+                        // 通話画面から戻った時の処理
+                        if screenState == .completed {
+                            Task {
+                                // マッチング状態をリセット
+                                await matchingViewModel.resetMatching()
+                                // 画面を閉じる
+                                if !isPresented {
+                                    screenState = .initial
+                                }
+                            }
+                        }
+                    }
+                    .transition(.opacity)
                 }
-                .transition(.opacity)
-            } else {
+            default:
                 // マッチング画面の表示
                 matchingContent
             }
         }
-        .animation(.easeInOut(duration: 0.5), value: showCallView)
+        .animation(.easeInOut(duration: 0.5), value: screenState)
     }
     
     @ViewBuilder
@@ -131,7 +147,7 @@ struct MatchingSearchView: View {
                     .padding(.horizontal, 40)
                     .padding(.bottom, 50)
                 }
-            } else if matchingViewModel.matchedUser != nil && !showCallView {
+            } else if screenState == .matchFound || screenState == .waitingForOtherUser {
                 // マッチ成功時の表示（通話画面に遷移していない場合のみ）
                 MatchFoundView(
                     matchedUser: matchingViewModel.matchedUser,
@@ -144,35 +160,68 @@ struct MatchingSearchView: View {
             }
         }
         .onAppear {
-            // 画面表示時に前の状態を完全にリセット
-            Task { @MainActor in
-                // 通話画面から戻ってきた場合を除き、状態をリセット
-                if !showCallView {
+            // 通話中は何もしない
+            if screenState == .inCall {
+                return
+            }
+            
+            // 初期状態の場合
+            if screenState == .initial {
+                // 画面表示時に前の状態を完全にリセット
+                Task { @MainActor in
                     // 前のマッチング状態をクリア
                     await matchingViewModel.resetMatching()
-                    // フラグをリセット
-                    matchFound = false
-                    showCallView = false
                     // アニメーション値もリセット
                     rotationAngle = 0
                     pulseScale = 1.0
+                    
+                    // 状態を検索中に変更
+                    screenState = .searching
                 }
-            }
-            
-            // アニメーションを開始
-            startSearchAnimation()
-            
-            // 初回ロード時のみ遅延してマッチング開始
-            if isInitialLoad {
-                isInitialLoad = false
-                startDelayedMatching(delaySeconds: 2)  // 3秒から2秒に短縮
+                
+                // アニメーションを開始
+                startSearchAnimation()
+                
+                // 遅延してマッチング開始
+                startDelayedMatching(delaySeconds: 2)
+            } else if screenState == .searching {
+                // 検索中の場合はアニメーションのみ再開
+                startSearchAnimation()
             }
         }
         .onChange(of: matchingViewModel.matchingState) { _, newState in
-            // マッチング状態が変わったときのアニメーション確認
-            if case .searching = newState, !showCallView {
-                // マッチング中の表示に戻った場合、アニメーションを再開
+            // ViewModelの状態に基づいて画面状態を更新
+            switch newState {
+            case .idle:
+                if screenState != .inCall {
+                    screenState = .initial
+                }
+            case .searching:
+                if screenState != .inCall {
+                    screenState = .searching
+                    startSearchAnimation()
+                }
+            case .matched:
+                if screenState != .inCall {
+                    screenState = .matchFound
+                }
+            case .selfAccepted:
+                screenState = .waitingForOtherUser
+            case .otherAccepted:
+                // 相手が先に承認した場合
+                if screenState != .inCall {
+                    screenState = .matchFound
+                }
+            case .bothAccepted:
+                // 通話画面へ即座に遷移
+                screenState = .inCall
+            case .rejected:
+                // 拒否された場合は検索状態に戻る
+                screenState = .searching
                 startSearchAnimation()
+            case .error:
+                // エラーの場合は初期状態に戻る
+                screenState = .initial
             }
         }
         .onDisappear {
@@ -205,7 +254,7 @@ struct MatchingSearchView: View {
                 
                 // マッチ成功画面から検索画面に戻す
                 withAnimation(.spring()) {
-                    matchFound = false
+                    // 状態はすでに.searchingに設定済み
                 }
                 
                 // アニメーションを開始
@@ -224,10 +273,6 @@ struct MatchingSearchView: View {
                 // マッチングタスクをキャンセル
                 matchingTask?.cancel()
                 matchingTask = nil
-                // 通話画面へ遷移（アニメーション付き）
-                withAnimation(.easeInOut(duration: 0.5)) {
-                    showCallView = true
-                }
             }
         }
     }
@@ -303,10 +348,10 @@ struct MatchingSearchView: View {
                         distance: distance
                     )
                     
-                    // マッチング相手が見つかった場合はmatchFoundをtrueに
+                    // マッチング相手が見つかった場合は状態を更新
                     if matchingViewModel.matchedUser != nil {
                         withAnimation(.spring()) {
-                            matchFound = true
+                            screenState = .matchFound
                         }
                     }
                 }
@@ -327,7 +372,7 @@ struct MatchingSearchView: View {
             
             // 画面をマッチング検索中に戻す
             withAnimation(.spring()) {
-                matchFound = false
+                screenState = .searching
             }
             
             // 画面遷移後にアニメーションを開始
