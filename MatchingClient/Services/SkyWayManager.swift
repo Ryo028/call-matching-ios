@@ -348,9 +348,19 @@ final class SkyWayManager: NSObject, ObservableObject {
             CameraVideoSource.shared().stopCapturing()
         }
         
-        // 3. オーディオセッションを非アクティブ化
+        // 3. オーディオセッションを確実に非アクティブ化
         let audioSession = AVAudioSession.sharedInstance()
-        try? audioSession.setActive(false, options: .notifyOthersOnDeactivation)
+        do {
+            // まず、カテゴリをリセット
+            try audioSession.setCategory(.ambient)
+            // オーディオセッションを非アクティブ化
+            try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
+            Log.info("Audio session successfully deactivated", category: .network)
+        } catch {
+            Log.error("Failed to deactivate audio session: \(error)", category: .network)
+            // エラーが発生しても強制的に非アクティブ化を試みる
+            try? audioSession.setActive(false)
+        }
         
         // 4. フラグをリセット
         isMuted = false
@@ -409,10 +419,19 @@ final class SkyWayManager: NSObject, ObservableObject {
         CameraVideoSource.shared().stopCapturing()
         Log.info("Camera capture stopped", category: .network)
         
-        // オーディオセッションを非アクティブ化
+        // オーディオセッションを確実に非アクティブ化
         let audioSession = AVAudioSession.sharedInstance()
-        try? audioSession.setActive(false, options: .notifyOthersOnDeactivation)
-        Log.info("Audio session deactivated", category: .network)
+        do {
+            // まず、カテゴリをリセット
+            try audioSession.setCategory(.ambient)
+            // オーディオセッションを非アクティブ化
+            try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
+            Log.info("Audio session successfully deactivated in leaveRoom", category: .network)
+        } catch {
+            Log.error("Failed to deactivate audio session in leaveRoom: \(error)", category: .network)
+            // エラーが発生しても強制的に非アクティブ化を試みる
+            try? audioSession.setActive(false)
+        }
         
         // 4. コールバックとデリゲートを解除
         onOtherParticipantLeft = nil
@@ -858,7 +877,7 @@ extension SkyWayManager: RoomDelegate {
     // メンバーの状態変更を検知
     nonisolated func room(_ room: Room, memberDidUpdateState member: RoomMember) {
         Task { @MainActor in
-            Log.info("Member state changed - \(member.name): \(member.state)", category: .network)
+            Log.info("Member state changed - \(member.name ?? "Unknown"): \(member.state)", category: .network)
             
             // 相手が離脱状態になった場合
             if member != localMember && member.state == .left {
@@ -902,20 +921,13 @@ extension SkyWayManager: RoomDelegate {
             
             Log.info("Subscription removed for: \(subscription.publication?.publisher?.name ?? "Unknown")", category: .network)
             
-            // すべてのサブスクリプションがなくなった場合（相手が切断した可能性）
+            // サブスクリプションが削除されても、すぐには相手の離脱と判断しない
+            // 通話継続機能があるため、一時的な切断の可能性がある
+            // memberDidUpdateStateで相手のstateがleftになった場合のみ離脱と判断する
             if localSubscriptions.isEmpty && isConnected {
-                Log.warning("All subscriptions lost - other participant may have disconnected", category: .network)
-                
-                // 少し待ってから再確認（一時的な切断の可能性があるため）
-                try? await Task.sleep(nanoseconds: 2_000_000_000) // 2秒待つ
-                
-                // まだサブスクリプションが空なら相手が離脱したと判断
-                if localSubscriptions.isEmpty && isConnected {
-                    Log.error("Other participant confirmed disconnected", category: .network)
-                    if let callback = onOtherParticipantLeft {
-                        callback()
-                    }
-                }
+                Log.warning("All subscriptions lost - but not immediately assuming disconnection (may be temporary)", category: .network)
+                // onOtherParticipantLeftコールバックは呼ばない
+                // memberDidUpdateStateデリゲートで相手の状態を確認する
             }
         }
     }
@@ -946,7 +958,7 @@ extension SkyWayManager: RoomDelegate {
             
             Log.info("Other members count: \(otherMembers.count)", category: .network)
             for member in otherMembers {
-                Log.info("Other member: \(member.name)", category: .network)
+                Log.info("Other member: \(member.name ?? "Unknown")", category: .network)
             }
             
             // 自分以外のメンバーがいなくなったら通知

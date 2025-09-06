@@ -3,10 +3,10 @@ import SwiftUI
 /// アプリのテーマカラーを管理
 enum Theme {
     /// プライマリカラー（ピンク系）
-    static let primaryColor = Color("PrimaryColor")
+    static let primaryColor = Color("BrandPrimary")
     
     /// セカンダリカラー（パープル系）
-    static let secondaryColor = Color("SecondaryColor")
+    static let secondaryColor = Color("BrandSecondary")
     
     /// アクセントカラー（オレンジ系）
     static let accentColor = Color("AccentColor")

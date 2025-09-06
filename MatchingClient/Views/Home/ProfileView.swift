@@ -89,21 +89,19 @@ struct ProfileView: View {
             .alert("ログアウト", isPresented: $showingLogoutAlert) {
                 Button("キャンセル", role: .cancel) {}
                 Button("ログアウト", role: .destructive) {
-                    Task {
-                        await authViewModel.logout()
-                    }
+                    authViewModel.logout()
                 }
             } message: {
                 Text("本当にログアウトしますか？")
             }
             .imagePickerActionSheet(isPresented: $showingImagePicker, selectedImage: $tempProfileImage)
-            .onChange(of: showingImagePicker) { isShowing in
+            .onChange(of: showingImagePicker) { _, isShowing in
                 // ImagePickerが表示された時にフラグを設定
                 if isShowing {
                     hasSelectedNewImage = true
                 }
             }
-            .onChange(of: tempProfileImage) { newImage in
+            .onChange(of: tempProfileImage) { _, newImage in
                 // 画像が選択されたら即座にアップロード
                 // ImagePickerから明示的に選択された場合のみアップロード
                 if let image = newImage, 
@@ -193,11 +191,12 @@ struct ProfileImageSection: View {
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(width: 120, height: 120)
-                        .clipShape(Circle())
+                        .superEllipse(n: 3.5)
                 } else {
-                    Circle()
+                    Rectangle()
                         .fill(Theme.buttonGradient)
                         .frame(width: 120, height: 120)
+                        .superEllipse(n: 2.5)
                         .overlay(
                             Image(systemName: "person.fill")
                                 .font(.system(size: 50))
@@ -207,20 +206,22 @@ struct ProfileImageSection: View {
                 
                 // アップロード中のインジケーター
                 if isUploadingImage {
-                    Circle()
+                    Rectangle()
                         .fill(Color.black.opacity(0.5))
                         .frame(width: 120, height: 120)
+                        .superEllipse(n: 3.5)
                         .overlay(
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         )
                 }
                 
-                // 編集バッジ
+                // 編集バッジ（SuperEllipse形状）
                 if isEditing && !isUploadingImage {
-                    Circle()
+                    Rectangle()
                         .fill(Theme.primaryColor)
                         .frame(width: 36, height: 36)
+                        .superEllipse(n: 3.5)
                         .overlay(
                             Image(systemName: "camera.fill")
                                 .font(.system(size: 16))
@@ -306,8 +307,9 @@ struct UserInfoCard: View {
                         .frame(minHeight: 80)
                         .padding(8)
                         .background(
-                            RoundedRectangle(cornerRadius: 10)
+                            Rectangle()
                                 .fill(Color.gray.opacity(0.1))
+                                .superEllipse(n: 3.5)
                         )
                 } else {
                     Text(userBio.isEmpty ? "自己紹介を入力してください" : userBio)
@@ -316,8 +318,9 @@ struct UserInfoCard: View {
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(
-                            RoundedRectangle(cornerRadius: 10)
+                            Rectangle()
                                 .fill(Color.gray.opacity(0.05))
+                                .superEllipse(n: 3.5)
                         )
                 }
             }
@@ -325,8 +328,9 @@ struct UserInfoCard: View {
         }
         .padding(.vertical, 24)
         .background(
-            RoundedRectangle(cornerRadius: 20)
+            Rectangle()
                 .fill(Color.white)
+                .superEllipse(n: 3.5)
                 .shadow(color: Theme.cardShadow, radius: 15, x: 0, y: 8)
         )
         .padding(.horizontal, 20)

@@ -4,36 +4,36 @@ import Foundation
 enum NotificationConstants {
     /// Pusherチャンネル名
     enum PusherChannel {
-        static let matchingPrefix = "matching."
         static let privatePrefix = "private-"
         static let presencePrefix = "presence-"
         
-        /// ユーザー専用チャンネル名を生成
+        /// ユーザー個人チャンネル名を生成
+        /// - Parameter userId: ユーザーID
+        /// - Returns: private-user.{userId} 形式のチャンネル名
         static func userChannel(userId: Int) -> String {
-            // 開発用: 固定チャンネル名を使用
-            #if DEBUG
-            return "private-matching-channel.1"
-            #else
             return "\(privatePrefix)user.\(userId)"
-            #endif
         }
         
-        /// マッチングチャンネル名を生成
+        /// ルームチャンネル名を生成（マッチング・通話共通）
+        /// - Parameter roomId: ルームID
+        /// - Returns: private-room.{roomId} 形式のチャンネル名
+        static func roomChannel(roomId: String) -> String {
+            return "\(privatePrefix)room.\(roomId)"
+        }
+        
+        // 後方互換性のため残す（段階的に削除予定）
+        @available(*, deprecated, message: "Use roomChannel instead")
         static func matchingChannel(roomId: String) -> String {
-            // 開発用: 固定チャンネル名を使用
-            #if DEBUG
-            return "private-matching-channel.1"
-            #else
-            return "\(privatePrefix)\(matchingPrefix)\(roomId)"
-            #endif
+            return roomChannel(roomId: roomId)
         }
     }
     
     /// Pusherイベント名
     enum PusherEvent {
-        /// 開発用: 統一イベント名
+        /// 統一イベント名（サーバーから送信される実際のイベント名）
         static let matchingEvent = "matching-event"
         
+        // 以下は将来的に個別イベントを実装する場合の予約名
         /// マッチング関連イベント
         static let matchingFound = "matching.found"
         static let matchingAccepted = "matching.accepted"
@@ -42,6 +42,7 @@ enum NotificationConstants {
         /// 通話関連イベント
         static let callStarted = "call.started"
         static let callEnded = "call.ended"
+        static let callContinue = "call.continue"
         
         /// メッセージ関連イベント
         static let messageReceived = "message.received"

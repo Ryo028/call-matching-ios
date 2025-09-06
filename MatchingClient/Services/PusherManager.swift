@@ -125,22 +125,33 @@ final class PusherManager: ObservableObject {
         Log.info("Subscribed to user channel: \(channelName)", category: .network)
     }
     
-    /// マッチングチャンネルを購読
-    func subscribeToMatchingChannel(roomId: String) {
-        let channelName = NotificationConstants.PusherChannel.matchingChannel(roomId: roomId)
+    /// ルームチャンネルを購読（マッチング・通話共通）
+    func subscribeToRoomChannel(roomId: String) {
+        let channelName = NotificationConstants.PusherChannel.roomChannel(roomId: roomId)
         
-        guard channels[channelName] == nil else {
-            Log.debug("Already subscribed to channel: \(channelName)", category: .network)
-            return
+        // 既存のチャンネルがある場合はそれを使用、なければ新規作成
+        let channel: PusherChannel?
+        if let existingChannel = channels[channelName] {
+            Log.debug("Already subscribed to channel: \(channelName) - ensuring event handlers are set", category: .network)
+            channel = existingChannel
+        } else {
+            channel = pusher?.subscribe(channelName)
+            channels[channelName] = channel
+            Log.info("Newly subscribed to room channel: \(channelName)", category: .network)
         }
         
-        let channel = pusher?.subscribe(channelName)
-        channels[channelName] = channel
+        // イベントハンドラーを必ず設定（再設定しても問題ない）
+        // マッチング関連イベントをバインド（continue_callイベントを含む）
+        bindMatchingEvents(to: channel)
         
         // 通話関連イベントをバインド
         bindCallEvents(to: channel)
-        
-        Log.info("Subscribed to matching channel: \(channelName)", category: .network)
+    }
+    
+    // 後方互換性のため残す（段階的に削除予定）
+    @available(*, deprecated, message: "Use subscribeToRoomChannel instead")
+    func subscribeToMatchingChannel(roomId: String) {
+        subscribeToRoomChannel(roomId: roomId)
     }
     
     /// チャンネルの購読を解除
@@ -209,8 +220,14 @@ final class PusherManager: ObservableObject {
                 let matchingEvent = wrapper.message
                 
                 DispatchQueue.main.async {
+                    Log.info("Received matching event:", category: .network)
+                    Log.info("  - Type: \(matchingEvent.type)", category: .network)
+                    Log.info("  - User: \(matchingEvent.user?.name ?? "nil")", category: .network)
+                    Log.info("  - Room: \(matchingEvent.roomId ?? "nil")", category: .network)
+                    
+                    // イベントをパブリッシュ
                     self?.matchingEventPublisher.send(matchingEvent)
-                    Log.info("Received matching event: \(matchingEvent)", category: .network)
+                    Log.info("Published matching event to matchingEventPublisher", category: .network)
                 }
             } catch {
                 Log.error("Failed to decode matching event: \(error)", category: .network)

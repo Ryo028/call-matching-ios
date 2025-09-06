@@ -122,10 +122,10 @@ struct MatchingSettingsView: View {
                 lowerValue: $lowerAge,
                 upperValue: $upperAge
             )
-            .onChange(of: lowerAge) { newValue in
+            .onChange(of: lowerAge) { _, newValue in
                 ageRange = Double(newValue)...ageRange.upperBound
             }
-            .onChange(of: upperAge) { newValue in
+            .onChange(of: upperAge) { _, newValue in
                 ageRange = ageRange.lowerBound...Double(newValue)
             }
         }
@@ -158,7 +158,7 @@ struct MatchingSettingsView: View {
                 initValue: Int(distanceRange),
                 value: $distanceValue
             )
-            .onChange(of: distanceValue) { newValue in
+            .onChange(of: distanceValue) { _, newValue in
                 distanceRange = Double(newValue)
             }
         }

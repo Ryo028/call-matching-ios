@@ -12,7 +12,7 @@ struct MatchFoundView: View {
     @State private var hasStartedTimer = false
     @StateObject private var timerManager = TimerManager()
     @State private var waitingTimer: Timer? = nil  // 承認待ち用タイマー
-    @State private var waitingTimeRemaining = 30  // 承認待ちの残り時間（秒）
+    @State private var waitingTimeRemaining = 15  // 承認待ちの残り時間（秒）
     @State private var profileImage: UIImage? = nil  // プロフィール画像
     
     var body: some View {
@@ -136,13 +136,8 @@ struct MatchFoundView: View {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                     .scaleEffect(0.8)
-                                VStack(spacing: 4) {
-                                    Text("相手の承認待ち...")
-                                        .font(.system(size: 18, weight: .bold))
-                                    Text("\(waitingTimeRemaining)秒")
-                                        .font(.system(size: 14))
-                                        .opacity(0.9)
-                                }
+                                Text("相手の承認待ち...")
+                                    .font(.system(size: 18, weight: .bold))
                             }
                         } else {
                             Image(systemName: "phone.fill")
@@ -223,9 +218,9 @@ struct MatchFoundView: View {
                 // 通常のタイマーを停止
                 timerManager.stopTimer()
                 
-                // 承認待ち用のタイマーを開始（30秒後にタイムアウト）
+                // 承認待ち用のタイマーを開始（15秒後にタイムアウト）
                 waitingTimer?.invalidate()
-                waitingTimeRemaining = 30
+                waitingTimeRemaining = 15
                 waitingTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
                     waitingTimeRemaining -= 1
                     if waitingTimeRemaining <= 0 {
@@ -260,11 +255,20 @@ struct MatchFoundView: View {
     /// プロフィール画像を読み込む
     /// - Parameter path: 画像のパス
     private func loadProfileImage(from path: String) {
+        // デバッグログ: 画像読み込み開始
+        if let user = matchedUser {
+            Log.debug("Loading profile image for user: \(user.id) - \(user.name)", category: .ui)
+            Log.debug("Image path: \(path)", category: .ui)
+        }
+        
         Task {
             if let image = await ImageLoader.loadProfileImage(from: path) {
                 await MainActor.run {
                     self.profileImage = image
+                    Log.debug("Profile image loaded successfully", category: .ui)
                 }
+            } else {
+                Log.warning("Failed to load profile image from: \(path)", category: .ui)
             }
         }
     }

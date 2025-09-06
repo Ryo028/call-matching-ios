@@ -157,5 +157,4 @@ private struct DraggbleCircle: View {
 
 #Preview {
     MultipleSliderView(lowerValue: .constant(18), upperValue: .constant(61))
-        .previewLayout(.sizeThatFits)
 }

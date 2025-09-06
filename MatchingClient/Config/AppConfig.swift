@@ -32,7 +32,7 @@ enum AppConfig {
                 // WiFi環境内でアクセス可能なIPアドレスを使用
                 // LaravelサーバーのIPアドレスとポートを指定
                 // 実機テスト時は、MacのIPアドレスを使用
-                return "http://192.168.0.59/api"
+                return "http://192.168.0.63/api"
             case .staging:
                 return "https://staging-api.example.com/api"
             case .production:

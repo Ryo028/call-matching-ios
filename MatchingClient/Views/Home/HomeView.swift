@@ -32,8 +32,8 @@ struct HomeView: View {
                                 .bold()
                                 .padding(.top, 80)
                             
-                            // 3D性別選択カード
-                            Gender3DCardSelectionView(selectedGender: $genderType)
+                            // SuperEllipse 3D性別選択カード
+                            SuperEllipseGender3DCardSelectionView(selectedGender: $genderType)
                                 .padding(.top, 30)
                                 .padding(.bottom, 20)
                             
@@ -64,9 +64,7 @@ struct HomeView: View {
                                     )
                                     .frame(width: 200, height: 60)
                                 HStack {
-                                    Image(systemName: "phone.fill")
-                                        .font(.system(size: 20))
-                                        .foregroundColor(Color.black)
+                                    Image(.telephoneReceiver)
                                     Spacer(minLength: 150)
                                 }
                             }
@@ -101,7 +99,7 @@ struct HomeView: View {
                         .padding(.bottom, 20)
                 }
             }
-            .navigationTitle("ランダムマッチ")
+            .navigationTitle(selectedTab == .profile ? "プロフィール" : "ランダムマッチ")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -124,14 +122,6 @@ struct HomeView: View {
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .environmentObject(authViewModel)
-        .onAppear {
-            // Pusher接続を開始
-            matchingViewModel.connectPusher()
-        }
-        .onDisappear {
-            // Pusher接続を切断
-            matchingViewModel.disconnectPusher()
-        }
     }
 }
 

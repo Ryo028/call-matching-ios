@@ -34,6 +34,7 @@ struct CallInProgressView: View {
     @State private var isContinueOfCall = false
     @State private var isRemoteContinueOfCall = false  // 相手が継続希望か
     @State private var hasAnsweredContinue = false  // 継続確認に回答済みか
+    @State private var hasInitializedCall = false  // 通話の初期化が完了したかどうか
     private let firstTimeLimit: Double = 15  // 最初の制限時間（秒）
     
     var body: some View {
@@ -353,6 +354,15 @@ struct CallInProgressView: View {
             .presentationBackground(.clear)
         }
         .onAppear {
+            // 既に初期化済みの場合は何もしない（CallEndViewから戻った時など）
+            guard !hasInitializedCall else {
+                Log.warning("Call already initialized, skipping initialization", category: .network)
+                return
+            }
+            
+            // 初期化フラグを立てる
+            hasInitializedCall = true
+            
             // プロフィール画像を読み込む
             if let imagePath = otherUser?.imagePath {
                 loadProfileImage(from: imagePath)
@@ -460,15 +470,14 @@ struct CallInProgressView: View {
                         } else {
                             // どちらかが継続を希望しなかった、または回答しなかった場合は通話終了
                             Log.info("Call ending - Self: \(isContinueOfCall), Remote: \(isRemoteContinueOfCall)", category: .general)
-                            // 音声/映像を即座に停止して画面遷移
+                            // 音声/映像を即座に停止
                             await viewModel.stopStreaming()
+                            // クリーンアップも待つ（マイクの確実な切断のため）
+                            await viewModel.cleanupResources()
+                            // その後画面遷移
                             await MainActor.run {
                                 finalCallDuration = viewModel.callDuration
                                 showCallEndView = true
-                            }
-                            // バックグラウンドで残りのクリーンアップ
-                            Task.detached(priority: .background) {
-                                await viewModel.cleanupResources()
                             }
                         }
                     }
@@ -531,8 +540,10 @@ struct CallInProgressView: View {
     
     /// Pusherイベントの購読設定
     private func setupPusherSubscriptions() {
-        // マッチングチャンネルに購読（通話継続イベントを受信するため）
-        pusherManager.subscribeToMatchingChannel(roomId: roomName)
+        // ルームチャンネルに購読（通話継続イベントを受信するため）
+        // 注：既にマッチング時に購読している可能性があるが、重複チェックがあるので問題ない
+        Log.info("Setting up room channel subscription for roomId: \(roomName)", category: .network)
+        pusherManager.subscribeToRoomChannel(roomId: roomName)
         
         // 通話継続イベントを購読
         pusherManager.callContinueEventPublisher

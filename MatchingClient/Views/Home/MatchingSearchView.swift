@@ -30,8 +30,8 @@ struct MatchingSearchView: View {
             switch screenState {
             case .inCall:
                 // 通話画面
-                if let roomId = matchingViewModel.roomId,
-                   let user = matchingViewModel.matchedUser {
+                if let roomId = matchingViewModel.matchingState.roomId,
+                   let user = matchingViewModel.matchingState.matchedUser {
                     CallInProgressView(
                         roomName: roomId,
                         displayName: user.name,
@@ -87,7 +87,7 @@ struct MatchingSearchView: View {
             )
             .ignoresSafeArea()
             
-            if matchingViewModel.matchedUser == nil {
+            if matchingViewModel.matchingState.matchedUser == nil {
                 // マッチング中の表示
                 VStack(spacing: 50) {
                     // キャンセルボタン（右上）
@@ -150,13 +150,13 @@ struct MatchingSearchView: View {
             } else if screenState == .matchFound || screenState == .waitingForOtherUser {
                 // マッチ成功時の表示（通話画面に遷移していない場合のみ）
                 MatchFoundView(
-                    matchedUser: matchingViewModel.matchedUser,
+                    matchedUser: matchingViewModel.matchingState.matchedUser,
                     onAccept: acceptMatch,
                     onDecline: declineMatch,
                     isWaitingForOtherUser: matchingViewModel.matchingState.isSelfAccepted,
                     otherUserAccepted: matchingViewModel.matchingState.isOtherAccepted
                 )
-                .id(matchingViewModel.matchedUser?.id)  // ユーザーIDでビューを識別
+                .id(matchingViewModel.matchingState.matchedUser?.id)  // ユーザーIDでビューを識別
             }
         }
         .onAppear {
@@ -273,6 +273,12 @@ struct MatchingSearchView: View {
                 // マッチングタスクをキャンセル
                 matchingTask?.cancel()
                 matchingTask = nil
+                
+                // 通話開始時にユーザーチャンネルの購読を解除（通話中はルームチャンネルを使用）
+                if let userId = authViewModel.currentUser?.id {
+                    PusherManager.shared.unsubscribe(from: NotificationConstants.PusherChannel.userChannel(userId: userId))
+                    Log.info("Unsubscribed from user channel - will use room channel during call", category: .network)
+                }
             }
         }
     }
@@ -284,7 +290,7 @@ struct MatchingSearchView: View {
         
         Task {
             // すでにマッチング開始していた場合はキャンセルAPIを呼ぶ
-            if matchingViewModel.isMatching || matchingViewModel.roomId != nil {
+            if matchingViewModel.matchingState.isSearching || matchingViewModel.matchingState.roomId != nil {
                 await matchingViewModel.cancelMatching()
             }
             
@@ -319,8 +325,8 @@ struct MatchingSearchView: View {
     
     /// マッチ承認
     private func acceptMatch() {
-        guard let user = matchingViewModel.matchedUser,
-              let roomId = matchingViewModel.roomId else { return }
+        guard let user = matchingViewModel.matchingState.matchedUser,
+              let roomId = matchingViewModel.matchingState.roomId else { return }
         
         Task {
             await matchingViewModel.acceptMatching(userId: user.id, roomId: roomId)
@@ -349,7 +355,7 @@ struct MatchingSearchView: View {
                     )
                     
                     // マッチング相手が見つかった場合は状態を更新
-                    if matchingViewModel.matchedUser != nil {
+                    if matchingViewModel.matchingState.matchedUser != nil {
                         withAnimation(.spring()) {
                             screenState = .matchFound
                         }
@@ -364,8 +370,8 @@ struct MatchingSearchView: View {
     
     /// マッチ拒否
     private func declineMatch() {
-        guard let user = matchingViewModel.matchedUser,
-              let roomId = matchingViewModel.roomId else { return }
+        guard let user = matchingViewModel.matchingState.matchedUser,
+              let roomId = matchingViewModel.matchingState.roomId else { return }
         
         Task {
             await matchingViewModel.rejectMatching(userId: user.id, roomId: roomId)

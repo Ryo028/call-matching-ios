@@ -5,7 +5,7 @@ import Alamofire
 ///
 /// 全てのAPI通信はこのクラスを通じて行われます。
 /// 認証トークンの管理とHTTPリクエストの共通処理を提供します。
-final class APIClient {
+final class APIClient: @unchecked Sendable {
     /// 共有インスタンス
     static let shared = APIClient()
     

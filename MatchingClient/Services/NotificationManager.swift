@@ -150,14 +150,22 @@ final class NotificationManager: NSObject {
         
         // バッジもクリア
         Task { @MainActor in
-            UIApplication.shared.applicationIconBadgeNumber = 0
+            if #available(iOS 16.0, *) {
+                try? await UNUserNotificationCenter.current().setBadgeCount(0)
+            } else {
+                UIApplication.shared.applicationIconBadgeNumber = 0
+            }
         }
     }
     
     /// バッジ数をクリア
     func clearBadge() {
         Task { @MainActor in
-            UIApplication.shared.applicationIconBadgeNumber = 0
+            if #available(iOS 16.0, *) {
+                try? await UNUserNotificationCenter.current().setBadgeCount(0)
+            } else {
+                UIApplication.shared.applicationIconBadgeNumber = 0
+            }
         }
     }
 }

@@ -97,14 +97,6 @@ final class MatchingViewModel: ObservableObject, BaseViewModel {
     @Published var pusherConnectionState = ConnectionState.disconnected
     @Published var shouldRestartMatching = false  // 再マッチングトリガー
     
-    // 後方互換性のための計算プロパティ（段階的に削除予定）
-    var isMatching: Bool { matchingState.isSearching }
-    var matchedUser: User? { matchingState.matchedUser }
-    var roomId: String? { matchingState.roomId }
-    var selfAccepted: Bool { matchingState.isSelfAccepted }
-    var otherUserAccepted: Bool { matchingState.isOtherAccepted }
-    var bothAccepted: Bool { matchingState.canTransitionToCall }
-    
     /// ユーザーIDを取得（@AppStorageを使用）
     @AppStorage(UserDefaultsKeys.Auth.userId) private var storedUserId: Int?
     
@@ -113,15 +105,23 @@ final class MatchingViewModel: ObservableObject, BaseViewModel {
     private var cancellables = Set<AnyCancellable>()
     
     init() {
+        Log.info("MatchingViewModel init", category: .api)
         setupPusherSubscriptions()
+    }
+    
+    deinit {
+        Log.warning("MatchingViewModel deinit - this should not happen during active session", category: .api)
     }
     
     /// Pusherイベントの購読設定
     private func setupPusherSubscriptions() {
+        Log.info("Setting up Pusher subscriptions in MatchingViewModel", category: .api)
+        
         // マッチングイベントの購読
         pusherManager.matchingEventPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] event in
+                Log.info("MatchingViewModel received event from publisher: \(event.type)", category: .api)
                 self?.handleMatchingEvent(event)
             }
             .store(in: &cancellables)
@@ -145,20 +145,10 @@ final class MatchingViewModel: ObservableObject, BaseViewModel {
         
         // ユーザーチャンネルを購読
         pusherManager.subscribeToUserChannel(userId: userId)
-        Log.info("Connected to Pusher for user: \(userId)", category: .network)
+        let channelName = NotificationConstants.PusherChannel.userChannel(userId: userId)
+        Log.info("Connected to Pusher for user: \(userId), channel: \(channelName)", category: .network)
     }
     
-    /// Pusher接続を開始（同期版・後方互換性のため残す）
-    func connectPusher() {
-        // ユーザーIDを取得（保存されている場合）
-        if let userId = storedUserId {
-            pusherManager.connect()
-            pusherManager.subscribeToUserChannel(userId: userId)
-            Log.info("Connected to Pusher for user: \(userId)", category: .network)
-        } else {
-            Log.warning("No user ID found for Pusher connection", category: .network)
-        }
-    }
     
     /// Pusher接続を切断
     func disconnectPusher() {
@@ -179,14 +169,23 @@ final class MatchingViewModel: ObservableObject, BaseViewModel {
         
         switch event.type {
         case "matched":
-            // マッチング成功
+            // マッチング成功（相手が先にマッチングAPIを呼んだ場合のPusherイベント）
+            // このイベントは相手から送信され、event.userには相手の情報が含まれる
             guard let user = event.user, let roomId = event.roomId else { return }
+            
+            // デバッグ: Pusherイベントで受信したユーザー情報を詳細にログ出力
+            Log.info("Pusher Event - Matched with user:", category: .api)
+            Log.info("  - User ID: \(user.id)", category: .api)
+            Log.info("  - User Name: \(user.name)", category: .api)
+            Log.info("  - User Image: \(user.imagePath ?? "nil")", category: .api)
+            Log.info("  - Current User ID: \(currentUserId ?? -1)", category: .api)
+            
             withAnimation(.spring()) {
                 self.matchingState = .matched(user: user, roomId: roomId)
             }
             
-            // マッチングチャンネルを購読
-            pusherManager.subscribeToMatchingChannel(roomId: roomId)
+            // ルームチャンネルを購読（マッチした2人で共有）
+            pusherManager.subscribeToRoomChannel(roomId: roomId)
             Log.info("Matched with user: \(user.id)", category: .api)
             
             // バックグラウンドの場合はローカル通知を送信
@@ -306,7 +305,7 @@ final class MatchingViewModel: ObservableObject, BaseViewModel {
                 genderValue = 0  // 指定なし（GENDER_TYPE_NONE）
             }
             
-            // Pusher接続を確立（まだ接続されていない場合）
+            // マッチング開始時にPusher接続を確立（まだ接続されていない場合）
             if !pusherConnectionState.isConnected {
                 // 非同期で接続完了を待つ
                 try await connectPusherAsync()
@@ -328,13 +327,18 @@ final class MatchingViewModel: ObservableObject, BaseViewModel {
             )
             
             if let matchedUser = response.user {
-                // マッチング相手が見つかった場合
+                // マッチング相手が見つかった場合（APIレスポンスから相手の情報を取得）
+                Log.info("API Response - Matched with user:", category: .api)
+                Log.info("  - User ID: \(matchedUser.id)", category: .api)
+                Log.info("  - User Name: \(matchedUser.name)", category: .api)
+                Log.info("  - User Image: \(matchedUser.imagePath ?? "nil")", category: .api)
+                
                 withAnimation(.spring()) {
                     self.matchingState = .matched(user: matchedUser, roomId: response.roomId)
                 }
                 
-                // マッチングチャンネルを購読
-                pusherManager.subscribeToMatchingChannel(roomId: response.roomId)
+                // ルームチャンネルを購読（マッチした2人で共有）
+                pusherManager.subscribeToRoomChannel(roomId: response.roomId)
                 
                 Log.info("Matching found user: \(matchedUser.id)", category: .api)
                 
@@ -365,12 +369,20 @@ final class MatchingViewModel: ObservableObject, BaseViewModel {
             errorMessage = nil
             shouldRestartMatching = false
             
-            // Pusherのマッチングチャンネル購読を解除
-            if let roomId = self.roomId {
-                PusherManager.shared.unsubscribe(from: NotificationConstants.PusherChannel.matchingChannel(roomId: roomId))
+            // Pusherのルームチャンネル購読を解除
+            if let roomId = self.matchingState.roomId {
+                PusherManager.shared.unsubscribe(from: NotificationConstants.PusherChannel.roomChannel(roomId: roomId))
             }
             
-            Log.info("Matching state completely reset", category: .api)
+            // ユーザーチャンネル購読を解除
+            if let userId = storedUserId {
+                PusherManager.shared.unsubscribe(from: NotificationConstants.PusherChannel.userChannel(userId: userId))
+            }
+            
+            // Pusher接続を切断（リソース節約）
+            pusherManager.disconnect()
+            
+            Log.info("Matching state completely reset and Pusher disconnected", category: .api)
         }
     }
     
@@ -394,6 +406,15 @@ final class MatchingViewModel: ObservableObject, BaseViewModel {
                 matchingState = .idle
                 isLoading = false
             }
+            
+            // チャンネル購読解除とPusher切断
+            if let roomId = self.matchingState.roomId {
+                PusherManager.shared.unsubscribe(from: NotificationConstants.PusherChannel.roomChannel(roomId: roomId))
+            }
+            if let userId = storedUserId {
+                PusherManager.shared.unsubscribe(from: NotificationConstants.PusherChannel.userChannel(userId: userId))
+            }
+            pusherManager.disconnect()
             
             if response.isSuccess {
                 Log.info("Matching cancelled successfully", category: .api)
@@ -512,6 +533,11 @@ final class MatchingViewModel: ObservableObject, BaseViewModel {
             )
             
             if response.isSuccess {
+                // ルームチャンネルを先に解除（状態変更前に）
+                if let roomId = self.matchingState.roomId {
+                    PusherManager.shared.unsubscribe(from: NotificationConstants.PusherChannel.roomChannel(roomId: roomId))
+                }
+                
                 withAnimation(.spring()) {
                     matchingState = .rejected
                     isLoading = false
@@ -519,8 +545,7 @@ final class MatchingViewModel: ObservableObject, BaseViewModel {
                 
                 Log.info("Matching rejected successfully", category: .api)
                 
-                // 再度マッチングを開始
-                // ユーザーが明示的に再開する必要があるため、ここでは何もしない
+                // 拒否時はPusher接続とユーザーチャンネルを維持（再マッチングの可能性があるため）
             } else {
                 throw APIClientError.unknown
             }

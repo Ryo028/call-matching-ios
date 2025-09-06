@@ -20,15 +20,14 @@ final class CallInProgressViewModel: ObservableObject {
     private let skyWayManager = SkyWayManager.shared
     private var callTimer: Timer?
     private var callStartTime: Date?
-    private var connectionCheckTimer: Timer?
-    private var lastConnectionCheck: Date = Date()
     var cancellables = Set<AnyCancellable>()  // CallInProgressViewからアクセス可能に
     
     private func handleOtherParticipantLeft() {
-        // dismissReasonを設定しない（アラートを表示しない）
-        // 通話を終了
+        // 相手が退出した場合、通話継続ダイアログが表示される可能性があるため
+        // ルームの即座の破棄は避け、フラグのみ設定
         Task {
-            await endCall()
+            // メディアストリームのみ停止（ルームは維持）
+            await stopStreaming()
             // UIの更新後に通話終了画面へ遷移
             await MainActor.run {
                 otherParticipantLeft = true
@@ -85,7 +84,6 @@ final class CallInProgressViewModel: ObservableObject {
             .store(in: &cancellables)
         
         startCallTimer()
-        startConnectionCheck()
         
         // 相手が退出した時のコールバックを設定
         skyWayManager.onOtherParticipantLeft = { [weak self] in
@@ -120,7 +118,6 @@ final class CallInProgressViewModel: ObservableObject {
     func stopStreaming() async {
         // タイマーを停止
         callTimer?.invalidate()
-        connectionCheckTimer?.invalidate()
         
         // 音声/映像ストリームを即座に停止
         await skyWayManager.stopMediaStreams()
@@ -164,35 +161,8 @@ final class CallInProgressViewModel: ObservableObject {
         callDuration = String(format: "%02d:%02d", minutes, seconds)
     }
     
-    private func startConnectionCheck() {
-        // 5秒ごとに接続状態をチェック
-        connectionCheckTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.checkConnection()
-            }
-        }
-    }
-    
-    private func checkConnection() {
-        // リモートストリームが存在するかチェック
-        if skyWayManager.remoteVideoStreams.isEmpty && skyWayManager.localSubscriptions.isEmpty {
-            let timeSinceLastCheck = Date().timeIntervalSince(lastConnectionCheck)
-            
-            // 10秒以上リモートストリームがない場合は切断と判断
-            if timeSinceLastCheck > 10 {
-                Log.error("No remote streams for 10 seconds - assuming disconnection", category: .network)
-                handleOtherParticipantLeft()
-                connectionCheckTimer?.invalidate()
-            }
-        } else {
-            // 接続が確認できたら最終チェック時刻を更新
-            lastConnectionCheck = Date()
-        }
-    }
-    
     deinit {
         callTimer?.invalidate()
-        connectionCheckTimer?.invalidate()
         // onOtherParticipantLeft は endCall() で既にnilに設定されている
     }
 }
